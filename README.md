@@ -1,54 +1,103 @@
-# MailBlast PH — Email Campaign Manager
+# MailBlast PH — FastAPI + React (Vite)
 
-A React + Python (Flask) email campaign tool for sending medical assistance requests.
+Email campaign manager for sending medical assistance requests.
 
-## Quick Start
+---
 
-### 1. Backend (Python/Flask)
-```bash
+## Setup
+
+### Backend (FastAPI)
+
+```powershell
 cd backend
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+venv\Scripts\activate
 pip install -r requirements.txt
-python app.py
+python main.py
 ```
-Backend runs on http://localhost:5000
 
-### 2. Frontend (React)
-```bash
+API runs at → http://127.0.0.1:5000  
+Interactive API docs → http://127.0.0.1:5000/docs
+
+---
+
+### Frontend — Development
+
+```powershell
 cd frontend
 npm install
-npm start
+npm run dev
 ```
-Frontend runs on http://localhost:3000
+
+Opens at → http://localhost:3000
+
+---
+
+### Frontend — Production Build
+
+```powershell
+cd frontend
+npm run build
+```
+
+Outputs to `frontend/dist/`.  
+FastAPI automatically serves the built React app at http://127.0.0.1:5000  
+**No separate frontend server needed in production.**
 
 ---
 
 ## Project Structure
+
 ```
 mailblast/
 ├── backend/
-│   ├── app.py               # Flask API server
-│   ├── email_sender.py      # SMTP email logic
+│   ├── main.py              ← FastAPI app (replaces Flask)
+│   ├── email_sender.py      ← SMTP logic
 │   ├── requirements.txt
 │   └── data/
-│       ├── contacts.csv     # Editable contact list
-│       └── attachments/     # Uploaded attachment files
+│       ├── contacts.csv     ← auto-created on first run
+│       └── attachments/     ← uploaded files
 └── frontend/
     ├── src/
+    │   ├── main.jsx         ← entry point
     │   ├── App.jsx
-    │   ├── components/
-    │   │   ├── Contacts.jsx
-    │   │   ├── Attachments.jsx
-    │   │   ├── Compose.jsx
-    │   │   └── Send.jsx
-    │   └── index.js
-    ├── public/index.html
+    │   ├── api.js           ← axios instance
+    │   ├── index.css
+    │   └── components/
+    │       ├── Contacts.jsx
+    │       ├── Attachments.jsx
+    │       ├── Compose.jsx
+    │       └── Send.jsx
+    ├── index.html
+    ├── vite.config.js
     └── package.json
 ```
 
-## Gmail App Password Setup
-1. Enable 2FA on your Google account
+---
+
+## Gmail App Password
+
+1. Enable 2FA on Google Account
 2. Go to Google Account → Security → App Passwords
-3. Create an app password for "Mail"
-4. Paste it into the Send tab (or set `GMAIL_APP_PASSWORD` env var)
+3. Generate one for "Mail"
+4. Enter it in the Send tab
+
+---
+
+## API Endpoints (FastAPI)
+
+| Method | URL | Description |
+|--------|-----|-------------|
+| GET | /api/contacts | List all contacts |
+| POST | /api/contacts | Add contact |
+| PUT | /api/contacts/{index} | Update contact |
+| DELETE | /api/contacts/{index} | Delete contact |
+| POST | /api/contacts/import | Import CSV file |
+| GET | /api/contacts/export | Download CSV |
+| GET | /api/attachments | List attachments |
+| POST | /api/attachments | Upload file |
+| DELETE | /api/attachments/{filename} | Delete file |
+| GET | /api/attachments/{filename} | Download file |
+| POST | /api/send | Send campaign |
+
+Full interactive docs at: http://127.0.0.1:5000/docs

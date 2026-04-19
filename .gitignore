@@ -4,5 +4,5 @@ backend/*.pyc
 backend/.env
 backend/data/attachments/
 node_modules/
-frontend/build/
+frontend/dist/
 .DS_Store
