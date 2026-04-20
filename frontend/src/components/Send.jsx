@@ -34,28 +34,52 @@ export default function Send({ template }) {
   const sendCampaign = async () => {
     if (!selected.size) return alert('Select at least one recipient.')
     if (!smtp.sender_email || !smtp.sender_password) return alert('Enter your sender email and app password.')
-    setStatus('sending'); setLog([]); setProgress(0)
+    
+    setStatus('sending')
+    setLog([])
+    setProgress(0)
+    
     const recipients = [...selected].map(i => contacts[i])
-    addLog(`Starting campaign — ${recipients.length} recipients, ${attachments.length} attachment(s)`)
-    try {
-      const res = await api.post('/api/send', {
-        smtp,
-        recipients,
-        subject: template.subject,
-        body: `${template.salutation} {name},\n\n${template.body}`,
-        attachments: attachments.map(a => a.name),
-      })
-      res.data.forEach((r, i) => {
-        setProgress(Math.round((i + 1) / res.data.length * 100))
-        addLog(`${r.success ? '✓' : '✗'} ${r.email} — ${r.message}`, r.success ? 'ok' : 'err')
-      })
-      const ok = res.data.filter(r => r.success).length
-      addLog(`── Done: ${ok}/${res.data.length} sent ──`, ok === res.data.length ? 'ok' : 'err')
-      setStatus(ok === res.data.length ? 'done' : 'error')
-    } catch (e) {
-      addLog('Network error: ' + (e.response?.data?.detail || e.message), 'err')
-      setStatus('error')
+    const total = recipients.length
+    let successfulCount = 0
+
+    addLog(`Starting campaign — ${total} recipients, ${attachments.length} attachment(s)`)
+
+    for (let i = 0; i < total; i++) {
+      const recipient = recipients[i]
+      
+      try {
+        // We wrap the single recipient in an array [ ] so the existing 
+        // backend /api/send (which expects a list) still works.
+        const res = await api.post('/api/send', {
+          smtp,
+          recipients: [recipient], 
+          subject: template.subject,
+          body: `${template.salutation} ${recipient.name},\n\n${template.body}`,
+          attachments: attachments.map(a => a.name),
+        })
+
+        // res.data is likely an array with one result: [{success: true, ...}]
+        const result = res.data[0]
+        
+        if (result.success) {
+          successfulCount++
+          addLog(`✓ ${result.email} — ${result.message}`, 'ok')
+        } else {
+          addLog(`✗ ${result.email} — ${result.message}`, 'err')
+        }
+      } catch (e) {
+        const errorMsg = e.response?.data?.detail || e.message
+        addLog(`✗ Network Error (${recipient.email}): ${errorMsg}`, 'err')
+      }
+
+      // Update progress bar immediately after each request finishes
+      setProgress(Math.round(((i + 1) / total) * 100))
     }
+
+    const allClear = successfulCount === total
+    addLog(`── Done: ${successfulCount}/${total} sent ──`, allClear ? 'ok' : 'err')
+    setStatus(allClear ? 'done' : 'error')
   }
 
   const statusLabel = { idle: 'Idle', sending: 'Sending…', done: 'Done', error: 'Errors' }[status]
